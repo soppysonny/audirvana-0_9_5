@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(xcodebuild -project Audirvana.xcodeproj -scheme Audirvana -configuration Debug)",
-      "Bash(grep -E \"^.*\\(error:|warning: deprecated|note:\\).*$\")"
+      "Bash(grep -E \"^.*\\(error:|warning: deprecated|note:\\).*$\")",
+      "Bash(brew install:*)",
+      "Bash(head -10 grep -n \"itemListMap\\\\|ItemListMap\\\\|items\\(\\)\" /Users/lava/Desktop/audirvana/extern/include/taglib/mp4tag.h)",
+      "Bash(brew search:*)"
     ]
   }
 }

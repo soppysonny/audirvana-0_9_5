@@ -26,15 +26,9 @@
 #ifndef TAGLIB_H
 #define TAGLIB_H
 
-#define TAGLIB_MAJOR_VERSION 1
-#define TAGLIB_MINOR_VERSION 7
-#define TAGLIB_PATCH_VERSION 0
-
-#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 1))
-#define TAGLIB_IGNORE_MISSING_DESTRUCTOR _Pragma("GCC diagnostic ignored \"-Wnon-virtual-dtor\"")
-#else
-#define TAGLIB_IGNORE_MISSING_DESTRUCTOR
-#endif
+#define TAGLIB_MAJOR_VERSION 2
+#define TAGLIB_MINOR_VERSION 2
+#define TAGLIB_PATCH_VERSION 1
 
 #if (defined(_MSC_VER) && _MSC_VER >= 1600)
 #define TAGLIB_CONSTRUCT_BITSET(x) static_cast<unsigned long long>(x)
@@ -42,13 +36,17 @@
 #define TAGLIB_CONSTRUCT_BITSET(x) static_cast<unsigned long>(x)
 #endif
 
-#include <string>
+#define TAGLIB_DEPRECATED [[deprecated]]
+
+#ifndef _WIN32
+#include <sys/types.h>
+#endif
 
 //! A namespace for all TagLib related classes and functions
 
 /*!
  * This namespace contains everything in TagLib.  For projects working with
- * TagLib extensively it may be conveniten to add a
+ * TagLib extensively it may be convenient to add a
  * \code
  * using namespace TagLib;
  * \endcode
@@ -58,71 +56,48 @@ namespace TagLib {
 
   class String;
 
-  typedef wchar_t wchar;
-  typedef unsigned char uchar;
-  typedef unsigned int  uint;
-  typedef unsigned long ulong;
+  // Offset or length type for I/O streams.
+  // In Win32, always 64bit. Otherwise, equivalent to off_t.
+#ifdef _WIN32
+  using offset_t = long long;
+#elif !defined(__illumos__)
+  using offset_t = off_t;
+#endif
 
-  /*!
-   * Unfortunately std::wstring isn't defined on some systems, (i.e. GCC < 3)
-   * so I'm providing something here that should be constant.
-   */
-  typedef std::basic_string<wchar> wstring;
-
-#ifndef DO_NOT_DOCUMENT // Tell Doxygen to skip this class.
-  /*!
-   * \internal
-   * This is just used as a base class for shared classes in TagLib.
-   *
-   * \warning This <b>is not</b> part of the TagLib public API!
-   */
-
-  class RefCounter
-  {
-  public:
-    RefCounter() : refCount(1) {}
-    void ref() { refCount++; }
-    bool deref() { return ! --refCount ; }
-    int count() { return refCount; }
-  private:
-    uint refCount;
-  };
-
-#endif // DO_NOT_DOCUMENT
-
-}
+}  // namespace TagLib
 
 /*!
  * \mainpage TagLib
  *
  * \section intro Introduction
  *
- * TagLib is a library for reading and editing audio meta data, commonly know as \e tags.
+ * TagLib is a library for reading and editing audio metadata, commonly known as \e tags.
  *
  * Features:
- * - A clean, high level, C++ API to handling audio meta data.
+ * - A clean, high level, C++ API for handling audio metadata.
  * - Format specific APIs for advanced API users.
  * - ID3v1, ID3v2, APE, FLAC, Xiph, iTunes-style MP4 and WMA tag formats.
- * - MP3, MPC, FLAC, MP4, ASF, AIFF, WAV, TrueAudio, WavPack, Ogg FLAC, Ogg Vorbis and Speex file formats.
+ * - MP3, MPC, FLAC, MP4, ASF, AIFF, WAV, DSF, DFF, TrueAudio, WavPack, Ogg FLAC, Ogg Vorbis, Speex,
+ *   Opus, Matroska and WebM file formats.
  * - Basic audio file properties such as length, sample rate, etc.
  * - Long term binary and source compatibility.
  * - Extensible design, notably the ability to add other formats or extend current formats as a library user.
  * - Full support for unicode and internationalized tags.
  * - Dual <a href="http://www.mozilla.org/MPL/MPL-1.1.html">MPL</a> and
  *   <a href="http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html">LGPL</a> licenses.
- * - No external toolkit dependancies.
+ * - No external toolkit dependencies.
  *
  * \section why Why TagLib?
  *
  * TagLib originally was written to provide an updated and improved ID3v2 implementation in C++ for use
  * in a variety of Open Source projects.  Since development began in 2002 and the 1.0 release in 2004
  * it has expanded to cover a wide variety of tag and file formats and is used in a wide variety of
- * Open Source and proprietary applications.  It now supports a variety of UNIXes, including Apple's OS
- * X, as well as Microsoft Windows.
+ * Open Source and proprietary applications.  It now supports a variety of UNIXes, including Apple's
+ * macOS, as well as Microsoft Windows.
  *
  * \section commercial Usage in Commercial Applications
  *
- * TagLib's licenses \e do allow usage within propriety (\e closed) applications, however TagLib is \e not
+ * TagLib's licenses \e do allow usage within proprietary (\e closed) applications, however TagLib is \e not
  * public domain.  Please note the requirements of the LGPL or MPL, and adhere to at least one of them.
  * In simple terms, you must at a minimum note your usage of TagLib, note the licensing terms of TagLib and
  * if you make changes to TagLib publish them.  Please review the licenses above before using TagLib in your
@@ -131,31 +106,36 @@ namespace TagLib {
  *
  * \section installing Installing TagLib
  *
- * Please see the <a href="http://developer.kde.org/~wheeler/taglib.html">TagLib website</a> for the latest
+ * Please see the <a href="http://taglib.org/">TagLib website</a> for the latest
  * downloads.
  *
- * TagLib can be built using the CMake build system. TagLib installs a taglib-config and pkg-config file to
+ * TagLib can be built using the CMake build system. TagLib installs a CMake
+ * configuration and a taglib-config and pkg-config file to
  * make it easier to integrate into various build systems.  Note that TagLib's include install directory \e must
  * be included in the header include path. Simply adding <taglib/tag.h> will \e not work.
+ *
+ * Detailed instructions about building TagLib itself and building with TagLib
+ * can be found in <a href="https://github.com/taglib/taglib/blob/master/INSTALL.md">INSTALL.md</a>
  *
  * \section start Getting Started
  *
  * TagLib provides both simple, abstract APIs which make it possible to ignore the differences between tagging
  * formats and format specific APIs which allow programmers to work with the features of specific tagging
- * schemes.  There is a similar abstraction mechanism for AudioProperties.
+ * schemes.  There is a similar abstraction mechanism for \link TagLib::AudioProperties AudioProperties \endlink.
  *
- * The best place to start is with the <b>Class Hierarchy</b> linked at the top of the page.  The File and
- * AudioProperties classes and their subclasses are the core of TagLib.  The FileRef class is also a convenient
- * way for using a value-based handle.
+ * The best place to start is with the <b>Class Hierarchy</b> linked at the top of the page.
+ * The \link TagLib::File File \endlink and \link TagLib::AudioProperties AudioProperties \endlink
+ * classes and their subclasses are the core of TagLib.  The \link TagLib::FileRef FileRef \endlink
+ * class is also a convenient way for using a value-based handle.
  *
- * \note When working with FileRef please consider that it has only the most basic (extension-based) file
- * type resolution.  Please see its documentation on how to plug in more advanced file type resolution.  (Such
- * resolution may be part of later TagLib releases by default.)
+ * \note When working with \link TagLib::FileRef FileRef \endlink please consider that it has only
+ * the most basic (extension-based) file type resolution.  Please see its documentation on how to
+ * plug in more advanced file type resolution.
+ * (Such resolution may be part of later TagLib releases by default.)
  *
  * Here's a very simple example with TagLib:
  *
- * \code
- *
+ * \code {.cpp}
  * TagLib::FileRef f("Latex Solar Beef.mp3");
  * TagLib::String artist = f.tag()->artist(); // artist == "Frank Zappa"
  *
@@ -167,20 +147,72 @@ namespace TagLib {
  *
  * g.tag()->setTrack(1);
  * g.save();
- *
  * \endcode
  *
- * More examples can be found in the \e examples directory of the source distribution.
+ * If the basic tag interface, which provides methods like
+ * \link TagLib::Tag::title() title() \endlink,
+ * \link TagLib::Tag::artist() artist() \endlink,
+ * \link TagLib::Tag::album() album() \endlink,
+ * \link TagLib::Tag::comment() comment() \endlink,
+ * \link TagLib::Tag::genre() genre() \endlink,
+ * \link TagLib::Tag::year() year() \endlink,
+ * \link TagLib::Tag::track() track() \endlink
+ * and the corresponding setters, is not enough, the
+ * \link TagLib::PropertyMap PropertyMap \endlink interface
+ * offers a flexible abstraction for textual metadata.
+ * See \ref p_propertymapping for details about the mapping of tags to properties.
+ *
+ * \code {.cpp}
+ * TagLib::PropertyMap props = f.properties();
+ * TagLib::StringList artists = props["ARTIST"];
+ * artists.append("Jim Pons");
+ * props["ARTIST"] = artists;
+ * f.setProperties(props);
+ * f.save();
+ * \endcode
+ *
+ * An additional \link TagLib::FileRef::complexProperties() abstraction \endlink is
+ * provided to handle complex (i.e. non textual) properties.
+ *
+ * \code {.cpp}
+ * TagLib::ByteVector data = ...;
+ * f.setComplexProperties("PICTURE", {
+ *   {
+ *     {"data", data},
+ *     {"pictureType", "Front Cover"},
+ *     {"mimeType", "image/jpeg"}
+ *   }
+ * });
+ * \endcode
+ *
+ * Finally, for full control, there are specific types for all supported metadata formats.
+ *
+ * \code {.cpp}
+ * if(auto file = dynamic_cast<TagLib::MPEG::File *>(f.file())) {
+ *   if(auto id3v2Tag = file->ID3v2Tag()) {
+ *     auto frames = id3v2Tag->frameList("SYLT");
+ *     if(!frames.isEmpty()) {
+ *       if(auto syltFrame = dynamic_cast<TagLib::ID3v2::SynchronizedLyricsFrame *>(
+ *           frames.front())) {
+ *         auto text = syltFrame->synchedText();
+ *         // ...
+ *       }
+ *     }
+ *   }
+ * }
+ * \endcode
+ *
+ * More examples can be found in the <a href="https://github.com/taglib/taglib/tree/master/examples">
+ * examples</a> directory of the source distribution.
  *
  * \section Contact
  *
  * Questions about TagLib should be directed to the TagLib mailing list, not directly to the author.
  *
- *  - <a href="http://developer.kde.org/~wheeler/taglib/">TagLib Homepage</a>
+ *  - <a href="http://taglib.org/">TagLib Homepage</a>
  *  - <a href="https://mail.kde.org/mailman/listinfo/taglib-devel">TagLib Mailing List (taglib-devel@kde.org)</a>
  *
- * \author Scott Wheeler <wheeler@kde.org> et al.
- *
+ * \author <a href="https://github.com/taglib/taglib/blob/master/AUTHORS">TagLib authors</a>.
  */
 
 #endif

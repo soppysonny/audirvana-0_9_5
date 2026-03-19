@@ -28,7 +28,6 @@
 
 #include "taglib_export.h"
 #include "audioproperties.h"
-
 #include "mpegheader.h"
 
 namespace TagLib {
@@ -57,20 +56,37 @@ namespace TagLib {
       /*!
        * Destroys this MPEG Properties instance.
        */
-      virtual ~Properties();
+      ~Properties() override;
 
-      // Reimplementations.
-
-      virtual int length() const;
-      virtual int bitrate() const;
-      virtual int sampleRate() const;
-      virtual int channels() const;
+      Properties(const Properties &) = delete;
+      Properties &operator=(const Properties &) = delete;
 
       /*!
-       * Returns a pointer to the XingHeader if one exists or null if no
-       * XingHeader was found.
+       * Returns the length of the file in milliseconds.
+       *
+       * \see lengthInSeconds()
        */
+      int lengthInMilliseconds() const override;
 
+      /*!
+       * Returns the average bit rate of the file in kb/s.
+       */
+      int bitrate() const override;
+
+      /*!
+       * Returns the sample rate in Hz.
+       */
+      int sampleRate() const override;
+
+      /*!
+       * Returns the number of audio channels.
+       */
+      int channels() const override;
+
+      /*!
+       * Returns a pointer to the Xing/VBRI header if one exists or null if no
+       * Xing/VBRI header was found.
+       */
       const XingHeader *xingHeader() const;
 
       /*!
@@ -84,7 +100,7 @@ namespace TagLib {
       int layer() const;
 
       /*!
-       * Returns true if the MPEG protection bit is enabled.
+       * Returns \c true if the MPEG protection bit is enabled.
        */
       bool protectionEnabled() const;
 
@@ -94,25 +110,33 @@ namespace TagLib {
       Header::ChannelMode channelMode() const;
 
       /*!
-       * Returns true if the copyrighted bit is set.
+       * Returns the MPEG-4 channel configuration.
+       */
+      Header::ChannelConfiguration channelConfiguration() const;
+
+      /*!
+       * Returns \c true for an Audio Data Transport Stream (ADTS), usually AAC.
+       */
+      bool isADTS() const;
+
+      /*!
+       * Returns \c true if the copyrighted bit is set.
        */
       bool isCopyrighted() const;
 
       /*!
-       * Returns true if the "original" bit is set.
+       * Returns \c true if the "original" bit is set.
        */
       bool isOriginal() const;
 
     private:
-      Properties(const Properties &);
-      Properties &operator=(const Properties &);
-
-      void read();
+      void read(File *file, ReadStyle readStyle);
 
       class PropertiesPrivate;
-      PropertiesPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<PropertiesPrivate> d;
     };
-  }
-}
+  }  // namespace MPEG
+}  // namespace TagLib
 
 #endif

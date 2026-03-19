@@ -26,8 +26,8 @@
 #ifndef TAGLIB_RIFFFILE_H
 #define TAGLIB_RIFFFILE_H
 
-#include "taglib_export.h"
 #include "tfile.h"
+#include "taglib_export.h"
 
 namespace TagLib {
 
@@ -35,7 +35,7 @@ namespace TagLib {
 
   namespace RIFF {
 
-    //! An RIFF file class with some useful methods specific to RIFF
+    //! A RIFF file class with some useful methods specific to RIFF
 
     /*!
      * This implements the generic TagLib::File API and additionally provides
@@ -49,50 +49,61 @@ namespace TagLib {
       /*!
        * Destroys this instance of the File.
        */
-      virtual ~File();
+      ~File() override;
+
+      File(const File &) = delete;
+      File &operator=(const File &) = delete;
 
     protected:
 
       enum Endianness { BigEndian, LittleEndian };
 
       File(FileName file, Endianness endianness);
+      File(IOStream *stream, Endianness endianness);
 
       /*!
        * \return The size of the main RIFF chunk.
        */
-      uint riffSize() const;
+      unsigned int riffSize() const;
 
       /*!
        * \return The number of chunks in the file.
        */
-      uint chunkCount() const;
+      unsigned int chunkCount() const;
 
       /*!
        * \return The offset within the file for the selected chunk number.
        */
-      uint chunkOffset(uint i) const;
+      offset_t chunkOffset(unsigned int i) const;
 
       /*!
        * \return The size of the chunk data.
        */
-      uint chunkDataSize(uint i) const;
+      unsigned int chunkDataSize(unsigned int i) const;
 
       /*!
        * \return The size of the padding after the chunk (can be either 0 or 1).
        */
-      uint chunkPadding(uint i) const;
+      unsigned int chunkPadding(unsigned int i) const;
 
       /*!
        * \return The name of the specified chunk, for instance, "COMM" or "ID3 "
        */
-      ByteVector chunkName(uint i) const;
+      ByteVector chunkName(unsigned int i) const;
 
       /*!
        * Reads the chunk data from the file and returns it.
        *
        * \note This \e will move the read pointer for the file.
        */
-      ByteVector chunkData(uint i);
+      ByteVector chunkData(unsigned int i);
+
+      /*!
+       * Sets the data for the specified chunk to \a data.
+       *
+       * \warning This will update the file immediately.
+       */
+      void setChunkData(unsigned int i, const ByteVector &data);
 
       /*!
        * Sets the data for the chunk \a name to \a data.  If a chunk with the
@@ -103,19 +114,49 @@ namespace TagLib {
        */
       void setChunkData(const ByteVector &name, const ByteVector &data);
 
-    private:
-      File(const File &);
-      File &operator=(const File &);
+      /*!
+       * Sets the data for the chunk \a name to \a data.  If a chunk with the
+       * given name already exists it will be overwritten, otherwise it will be
+       * created after the existing chunks.
+       *
+       * \note If \a alwaysCreate is \c true, a new chunk is created regardless of
+       * whether or not the chunk \a name exists. It should only be used for
+       * "LIST" chunks.
+       *
+       * \warning This will update the file immediately.
+       */
+      void setChunkData(const ByteVector &name, const ByteVector &data, bool alwaysCreate);
 
+      /*!
+       * Removes the specified chunk.
+       *
+       * \warning This will update the file immediately.
+       */
+      void removeChunk(unsigned int i);
+
+      /*!
+       * Removes the chunk \a name.
+       *
+       * \warning This will update the file immediately.
+       * \warning This removes all the chunks with the given name.
+       */
+      void removeChunk(const ByteVector &name);
+
+    private:
       void read();
       void writeChunk(const ByteVector &name, const ByteVector &data,
-                      ulong offset, ulong replace = 0,
-                      uint leadingPadding = 0);
+                      offset_t offset, unsigned long replace = 0);
+
+      /*!
+       * Update the global RIFF size based on the current internal structure.
+       */
+      void updateGlobalSize();
 
       class FilePrivate;
-      FilePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<FilePrivate> d;
     };
-  }
-}
+  }  // namespace RIFF
+}  // namespace TagLib
 
 #endif

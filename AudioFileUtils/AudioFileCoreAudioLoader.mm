@@ -482,18 +482,18 @@ using namespace std;
 	if (mp4file.isValid() && mp4file.tag() ) {
 		TagLib::MP4::Tag *tag = mp4file.tag();
 		TagLib::String str;
-		TagLib::uint trackNumber;
+		unsigned int trackNumber;
 
 		str = tag->title();
-		if (!str.isNull())
+		if (!str.isEmpty())
 			[mFileMetadata setObject:[NSString stringWithUTF8String:str.toCString(true)]
 							  forKey:[NSString stringWithUTF8String: kAFInfoDictionary_Title]];
 		str = tag->artist();
-		if (!str.isNull())
+		if (!str.isEmpty())
 			[mFileMetadata setObject:[NSString stringWithUTF8String:str.toCString(true)]
 							  forKey:[NSString stringWithUTF8String: kAFInfoDictionary_Artist]];
 		str = tag->album();
-		if (!str.isNull())
+		if (!str.isEmpty())
 			[mFileMetadata setObject:[NSString stringWithUTF8String:str.toCString(true)]
 							  forKey:[NSString stringWithUTF8String: kAFInfoDictionary_Album]];
 
@@ -502,13 +502,13 @@ using namespace std;
 			[mFileMetadata setObject:[NSNumber numberWithInt:trackNumber]
 							  forKey:[NSString stringWithUTF8String: kAFInfoDictionary_TrackNumber]];
 
-		if (!tag->itemListMap().isEmpty() && tag->itemListMap().contains("\251wrt")) {
-			[mFileMetadata setObject:[NSString stringWithUTF8String:tag->itemListMap()["\251wrt"].toStringList().toString().toCString(true)]
+		if (!tag->itemMap().isEmpty() && tag->itemMap().contains("\251wrt")) {
+			[mFileMetadata setObject:[NSString stringWithUTF8String:tag->itemMap()["\251wrt"].toStringList().toString().toCString(true)]
 							  forKey:[NSString stringWithUTF8String: kAFInfoDictionary_Composer]];
 		}
 
-		if (!tag->itemListMap().isEmpty() && tag->itemListMap().contains("covr")) {
-			TagLib::MP4::CoverArtList coverartlist = tag->itemListMap()["covr"].toCoverArtList();
+		if (!tag->itemMap().isEmpty() && tag->itemMap().contains("covr")) {
+			TagLib::MP4::CoverArtList coverartlist = tag->itemMap()["covr"].toCoverArtList();
 			if (!coverartlist.isEmpty()) {
 				NSImage	*albumArt = [[NSImage alloc] initWithData:[NSData dataWithBytes:coverartlist.front().data().data() length:coverartlist.front().data().size()]];
 				if(albumArt) {

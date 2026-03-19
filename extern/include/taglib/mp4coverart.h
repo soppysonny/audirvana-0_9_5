@@ -1,5 +1,5 @@
 /**************************************************************************
-    copyright            : (C) 2009 by Lukáš Lalinský
+    copyright            : (C) 2009 by LukÃ¡Å¡ LalinskÃ½
     email                : lalinsky@gmail.com
  **************************************************************************/
 
@@ -29,11 +29,11 @@
 #include "tlist.h"
 #include "tbytevector.h"
 #include "taglib_export.h"
+#include "mp4atom.h"
 
 namespace TagLib {
-
   namespace MP4 {
-
+    //! MP4 picture
     class TAGLIB_EXPORT CoverArt
     {
     public:
@@ -41,15 +41,27 @@ namespace TagLib {
        * This describes the image type.
        */
       enum Format {
-        JPEG = 0x0D,
-        PNG  = 0x0E
+        JPEG    = TypeJPEG,
+        PNG     = TypePNG,
+        BMP     = TypeBMP,
+        GIF     = TypeGIF,
+        Unknown = TypeImplicit,
       };
 
       CoverArt(Format format, const ByteVector &data);
       ~CoverArt();
 
       CoverArt(const CoverArt &item);
+
+      /*!
+       * Copies the contents of \a item into this CoverArt.
+       */
       CoverArt &operator=(const CoverArt &item);
+
+      /*!
+       * Exchanges the content of the CoverArt with the content of \a item.
+       */
+      void swap(CoverArt &item) noexcept;
 
       //! Format of the image
       Format format() const;
@@ -57,15 +69,24 @@ namespace TagLib {
       //! The image data
       ByteVector data() const;
 
+      /*!
+       * Returns \c true if the CoverArt and \a other are of the same format and
+       * contain the same data.
+       */
+      bool operator==(const CoverArt &other) const;
+
+      /*!
+       * Returns \c true if the CoverArt and \a other  differ in format or data.
+       */
+      bool operator!=(const CoverArt &other) const;
+
     private:
       class CoverArtPrivate;
-      CoverArtPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::shared_ptr<CoverArtPrivate> d;
     };
 
-    typedef List<CoverArt> CoverArtList;
-
-  }
-
-}
-
+    using CoverArtList = List<CoverArt>;
+  }  // namespace MP4
+}  // namespace TagLib
 #endif

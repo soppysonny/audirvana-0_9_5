@@ -26,6 +26,7 @@
 #ifndef TAGLIB_AIFFPROPERTIES_H
 #define TAGLIB_AIFFPROPERTIES_H
 
+#include "tstring.h"
 #include "audioproperties.h"
 
 namespace TagLib {
@@ -46,37 +47,85 @@ namespace TagLib {
       class TAGLIB_EXPORT Properties : public AudioProperties
       {
       public:
-	/*!
-	 * Create an instance of AIFF::Properties with the data read from the
-	 * ByteVector \a data.
-	 */
-	Properties(const ByteVector &data, ReadStyle style);
+        /*!
+         * Create an instance of AIFF::Properties with the data read from the
+         * AIFF::File \a file.
+         */
+        Properties(File *file, ReadStyle style);
 
-	/*!
-	 * Destroys this AIFF::Properties instance.
-	 */
-	virtual ~Properties();
+        /*!
+         * Destroys this AIFF::Properties instance.
+         */
+        ~Properties() override;
 
-	// Reimplementations.
+        Properties(const Properties &) = delete;
+        Properties &operator=(const Properties &) = delete;
 
-	virtual int length() const;
-	virtual int bitrate() const;
-	virtual int sampleRate() const;
-	virtual int channels() const;
+        /*!
+         * Returns the length of the file in milliseconds.
+         *
+         * \see lengthInSeconds()
+         */
+        int lengthInMilliseconds() const override;
 
-	int sampleWidth() const;
+        /*!
+         * Returns the average bit rate of the file in kb/s.
+         */
+        int bitrate() const override;
+
+        /*!
+         * Returns the sample rate in Hz.
+         */
+        int sampleRate() const override;
+
+        /*!
+         * Returns the number of audio channels.
+         */
+        int channels() const override;
+
+        /*!
+         * Returns the number of bits per audio sample.
+         */
+        int bitsPerSample() const;
+
+        /*!
+         * Returns the number of sample frames
+         */
+        unsigned int sampleFrames() const;
+
+        /*!
+         * Returns \c true if the file is in AIFF-C format, \c false if AIFF format.
+         */
+        bool isAiffC() const;
+
+        /*!
+         * Returns the compression type of the AIFF-C file.  For example, "NONE" for
+         * not compressed, "ACE2" for ACE 2-to-1.
+         *
+         * If the file is in AIFF format, always returns an empty vector.
+         *
+         * \see isAiffC()
+         */
+        ByteVector compressionType() const;
+
+        /*!
+         * Returns the concrete compression name of the AIFF-C file.
+         *
+         * If the file is in AIFF format, always returns an empty string.
+         *
+         * \see isAiffC()
+         */
+        String compressionName() const;
 
       private:
-	Properties(const Properties &);
-	Properties &operator=(const Properties &);
+        void read(File *file);
 
-	void read(const ByteVector &data);
-
-	class PropertiesPrivate;
-	PropertiesPrivate *d;
+        class PropertiesPrivate;
+        TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+        std::unique_ptr<PropertiesPrivate> d;
       };
-    }
-  }
-}
+    }  // namespace AIFF
+  }  // namespace RIFF
+}  // namespace TagLib
 
 #endif

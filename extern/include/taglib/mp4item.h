@@ -1,5 +1,5 @@
 /**************************************************************************
-    copyright            : (C) 2007 by Lukáš Lalinský
+    copyright            : (C) 2007 by LukÃ¡Å¡ LalinskÃ½
     email                : lalinsky@gmail.com
  **************************************************************************/
 
@@ -27,46 +27,99 @@
 #define TAGLIB_MP4ITEM_H
 
 #include "tstringlist.h"
-#include "mp4coverart.h"
 #include "taglib_export.h"
+#include "mp4coverart.h"
+#include "mp4stem.h"
 
 namespace TagLib {
-
   namespace MP4 {
-
+    //! MP4 item
     class TAGLIB_EXPORT Item
     {
     public:
+      /*!
+       * The data type stored in the item.
+       */
+      enum class Type : unsigned char {
+        Void,
+        Bool,
+        Int,
+        IntPair,
+        Byte,
+        UInt,
+        LongLong,
+        StringList,
+        ByteVectorList,
+        CoverArtList,
+        Stem,
+      };
+
       struct IntPair {
         int first, second;
       };
 
       Item();
       Item(const Item &item);
+
+      /*!
+       * Copies the contents of \a item into this Item.
+       */
       Item &operator=(const Item &item);
+
+      /*!
+       * Exchanges the content of the Item with the content of \a item.
+       */
+      void swap(Item &item) noexcept;
+
       ~Item();
 
       Item(int value);
+      Item(unsigned char value);
+      Item(unsigned int value);
+      Item(long long value);
       Item(bool value);
-      Item(int first, int second);
+      Item(int value1, int value2);
       Item(const StringList &value);
+      Item(const ByteVectorList &value);
       Item(const CoverArtList &value);
+      Item(const Stem &value);
+
+      void setAtomDataType(AtomDataType type);
+      AtomDataType atomDataType() const;
 
       int toInt() const;
+      unsigned char toByte() const;
+      unsigned int toUInt() const;
+      long long toLongLong() const;
       bool toBool() const;
       IntPair toIntPair() const;
       StringList toStringList() const;
+      ByteVectorList toByteVectorList() const;
       CoverArtList toCoverArtList() const;
+      Stem toStem() const;
 
       bool isValid() const;
 
+      Type type() const;
+
+      /*!
+       * Returns \c true if the Item and \a other are of the same type and
+       * contain the same value.
+       */
+      bool operator==(const Item &other) const;
+
+      /*!
+       * Returns \c true if the Item and \a other  differ in type or value.
+       */
+      bool operator!=(const Item &other) const;
+
     private:
       class ItemPrivate;
-      ItemPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::shared_ptr<ItemPrivate> d;
     };
 
-  }
-
-}
-
+    using ItemMap = TagLib::Map<String, Item>;
+  }  // namespace MP4
+}  // namespace TagLib
 #endif

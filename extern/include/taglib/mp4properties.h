@@ -1,5 +1,5 @@
 /**************************************************************************
-    copyright            : (C) 2007 by Lukáš Lalinský
+    copyright            : (C) 2007 by LukÃ¡Å¡ LalinskÃ½
     email                : lalinsky@gmail.com
  **************************************************************************/
 
@@ -30,9 +30,7 @@
 #include "audioproperties.h"
 
 namespace TagLib {
-
   namespace MP4 {
-
     class Atoms;
     class File;
 
@@ -40,22 +38,62 @@ namespace TagLib {
     class TAGLIB_EXPORT Properties : public AudioProperties
     {
     public:
-      Properties(File *file, Atoms *atoms, ReadStyle style = Average);
-      virtual ~Properties();
+      enum Codec {
+        Unknown = 0,
+        AAC,
+        ALAC
+      };
 
-      virtual int length() const;
-      virtual int bitrate() const;
-      virtual int sampleRate() const;
-      virtual int channels() const;
+      Properties(File *file, const Atoms *atoms, ReadStyle style = Average);
+      ~Properties() override;
+
+      Properties(const Properties &) = delete;
+      Properties &operator=(const Properties &) = delete;
+
+      /*!
+       * Returns the length of the file in milliseconds.
+       *
+       * \see lengthInSeconds()
+       */
+      int lengthInMilliseconds() const override;
+
+      /*!
+       * Returns the average bit rate of the file in kb/s.
+       */
+      int bitrate() const override;
+
+      /*!
+       * Returns the sample rate in Hz.
+       */
+      int sampleRate() const override;
+
+      /*!
+       * Returns the number of audio channels.
+       */
+      int channels() const override;
+
+      /*!
+       * Returns the number of bits per audio sample.
+       */
       virtual int bitsPerSample() const;
 
+      /*!
+       * Returns whether or not the file is encrypted.
+       */
+      bool isEncrypted() const;
+
+      /*!
+       * Returns the codec used in the file.
+       */
+      Codec codec() const;
+
     private:
+      void read(File *file, const Atoms *atoms);
+
       class PropertiesPrivate;
-      PropertiesPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<PropertiesPrivate> d;
     };
-
-  }
-
-}
-
+  }  // namespace MP4
+}  // namespace TagLib
 #endif
