@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xcodebuild -project Audirvana.xcodeproj -scheme Audirvana -configuration Debug)",
+      "Bash(grep -E \"^.*\\(error:|warning: deprecated|note:\\).*$\")"
+    ]
+  }
+}

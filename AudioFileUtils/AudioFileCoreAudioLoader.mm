@@ -27,7 +27,7 @@
 #include <taglib/attachedpictureframe.h>
 
 #include <dispatch/dispatch.h>
-#include </usr/include/mach/vm_map.h>
+#include <mach/vm_map.h>
 
 #import "AppController.h"
 #import "AudioFileCoreAudioLoader.h"
