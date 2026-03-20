@@ -29,6 +29,7 @@
 #import "DebugController.h"
 #import "PlaylistDocument.h"
 #import "CustomSliderCell.h"
+#import "SilenceOutputController.h"
 
 @interface AppController (Notifications)
 - (void)handlePlaylistTrackAppended:(NSNotification*)notification;
@@ -117,6 +118,7 @@
 		[parentWindow setBackgroundColor:[NSColor colorWithPatternImage:[NSImage imageNamed:@"Black_PlayerWin_mainWindowBackground.png"]]];
 
 	audioOut = [[AudioOutput alloc] initWithController:self];
+    silenceOutputController = [[SilenceOutputController alloc] initWithAppController:self];
 
 	[audioOut selectDevice:[[NSUserDefaults standardUserDefaults]
 										   stringForKey:AUDPreferredAudioDeviceUID]];
@@ -330,6 +332,18 @@
 
 	if (uiSkinTheme != kAUDUISilverTheme)
 		[self handleUpdateUISkinTheme:nil];
+
+    // Add "Silence Output..." menu item to the Audio menu (or the main app menu)
+    NSMenu *mainMenu = [NSApp mainMenu];
+    NSMenuItem *audirvanaMenuItem = [mainMenu itemAtIndex:0]; // Application menu
+    NSMenu *audirvanaMenu = [audirvanaMenuItem submenu];
+    NSMenuItem *silenceMenuItem = [[NSMenuItem alloc] initWithTitle:@"Silence Output..."
+                                                              action:@selector(showSilenceOutputPanel:)
+                                                       keyEquivalent:@""];
+    [silenceMenuItem setTarget:self];
+    [audirvanaMenu addItem:[NSMenuItem separatorItem]];
+    [audirvanaMenu addItem:silenceMenuItem];
+    [silenceMenuItem release];
 }
 
 - (void)dealloc
@@ -345,6 +359,7 @@
 	if (preferenceController) [preferenceController release];
 	if (debugController) [debugController release];
 	if (mPlaylistDoc) [mPlaylistDoc release];
+    if (silenceOutputController) [silenceOutputController release];
 	[super dealloc];
 }
 
@@ -373,6 +388,11 @@
 	[debugController setInfoText:[audioOut description]];
 }
 
+- (IBAction)showSilenceOutputPanel:(id)sender
+{
+    [silenceOutputController showPanel];
+}
+
 - (IBAction)openDonationPage:(id)sender
 {
 	[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=6PZANKDHSN358"]];
@@ -392,13 +412,57 @@
 	}
 }
 
+#pragma mark Silence output
+
+- (void)startSilenceOutput:(Float64)sampleRate isDSDMode:(BOOL)isDSD
+{
+    if ([audioOut isPlaying])
+        [audioOut stop];
+
+    [audioOut startSilenceOutput:sampleRate isDSDMode:isDSD];
+    mPlaybackInitiating = YES;
+}
+
+- (void)stopSilenceOutput
+{
+    if ([audioOut isSilenceModeActive]) {
+        [audioOut stop];
+        [audioOut resetSilenceMode];
+        [silenceOutputController setIsActive:NO];
+    }
+}
+
+- (void)startSilencePlaybackPhase
+{
+    NSError *err;
+    mPlaybackInitiating = NO;
+
+    if (![audioOut startPlayback:&err]) {
+        [audioOut resetSilenceMode];
+        [silenceOutputController setIsActive:NO];
+        [self abortPlayingStart:err];
+        return;
+    }
+
+    [silenceOutputController setIsActive:YES];
+    [silenceOutputController updateStatus:@"Silence output active"];
+}
+
 #pragma mark User actions handlers
 
 - (void)startPlaying
 {
 	NSError *err;
 
-	if ([audioOut isPlaying]) return;
+	if ([audioOut isPlaying]) {
+        if ([audioOut isSilenceModeActive]) {
+            [audioOut stop];
+            [audioOut resetSilenceMode];
+            [silenceOutputController setIsActive:NO];
+        } else {
+            return;
+        }
+    }
 
 	if ([mPlaylistDoc playlistCount] <= 0) return;
 
@@ -482,8 +546,12 @@
 	Float64 deviceMaxSplRate;
 	NSAttributedString *errorString;
 
-
     mPlaybackInitiating = NO;
+
+    if ([audioOut isSilenceModeActive]) {
+        [audioOut resetSilenceMode];
+        [silenceOutputController setIsActive:NO];
+    }
 
 	[audioOut closeBuffers];
 	if ([[NSUserDefaults standardUserDefaults] integerForKey:AUDUISkinTheme] == kAUDUISilverTheme) {
@@ -567,6 +635,10 @@
 - (IBAction)stop: (id)sender
 {
 	if ([audioOut isPlaying]) {
+        if ([audioOut isSilenceModeActive]) {
+            [audioOut resetSilenceMode];
+            [silenceOutputController setIsActive:NO];
+        }
 		[audioOut stop];
 		[audioOut closeBuffers];
 		if ([[NSUserDefaults standardUserDefaults] integerForKey:AUDUISkinTheme] == kAUDUISilverTheme) {

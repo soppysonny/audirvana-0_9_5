@@ -90,6 +90,7 @@
 		6D92F2C0127C835600C6682F /* PlaylistArrayController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D92F2BF127C835600C6682F /* PlaylistArrayController.m */; };
 		6D92F2C8127CBF8700C6682F /* PlaylistView.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D92F2C7127CBF8700C6682F /* PlaylistView.m */; };
 		6DA2DFCE12992F4600F29798 /* DebugController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6DA2DFCD12992F4600F29798 /* DebugController.m */; };
+		AE000001000000000000001 /* SilenceOutputController.m in Sources */ = {isa = PBXBuildFile; fileRef = AE000001000000000000000 /* SilenceOutputController.m */; };
 		6DA2DFD112992FBD00F29798 /* Debug.xib in Resources */ = {isa = PBXBuildFile; fileRef = 6DA2DFCF12992FBD00F29798 /* Debug.xib */; };
 		6DB104B61221512200864AE5 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 6DB104B51221512200864AE5 /* LICENSE */; };
 		6DBA9BE3123D06850083B20D /* PlaylistDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = 6DBA9BE2123D06850083B20D /* PlaylistDocument.m */; };
@@ -257,6 +258,8 @@
 		6D92F2C7127CBF8700C6682F /* PlaylistView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = PlaylistView.m; path = Player/PlaylistView.m; sourceTree = "<group>"; };
 		6DA2DFCC12992F4600F29798 /* DebugController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DebugController.h; path = Application/DebugController.h; sourceTree = "<group>"; };
 		6DA2DFCD12992F4600F29798 /* DebugController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = DebugController.m; path = Application/DebugController.m; sourceTree = "<group>"; };
+		AE000001000000000000000 /* SilenceOutputController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SilenceOutputController.m; path = Application/SilenceOutputController.m; sourceTree = "<group>"; };
+		AE000001000000000000002 /* SilenceOutputController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SilenceOutputController.h; path = Application/SilenceOutputController.h; sourceTree = "<group>"; };
 		6DA2DFD012992FBD00F29798 /* English */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = English; path = English.lproj/Debug.xib; sourceTree = "<group>"; };
 		6DB104B51221512200864AE5 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		6DBA9BB1123D04550083B20D /* AudioOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AudioOutput.h; path = Player/AudioOutput.h; sourceTree = "<group>"; };
@@ -616,6 +619,8 @@
 				6DF17B39126984A900051593 /* PreferenceController.m */,
 				6DA2DFCC12992F4600F29798 /* DebugController.h */,
 				6DA2DFCD12992F4600F29798 /* DebugController.m */,
+				AE000001000000000000002 /* SilenceOutputController.h */,
+				AE000001000000000000000 /* SilenceOutputController.m */,
 			);
 			name = Application;
 			sourceTree = "<group>";
@@ -844,6 +849,7 @@
 				6DD906561335F0B800A09DB1 /* TrackNumberFormatter.m in Sources */,
 				6DFFED8F136CB29D00D0B454 /* NSObject+SPInvocationGrabbing.m in Sources */,
 				6DFFED90136CB2A100D0B454 /* SPMediaKeyTap.m in Sources */,
+				AE000001000000000000001 /* SilenceOutputController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

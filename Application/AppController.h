@@ -26,6 +26,7 @@
 @class PlaylistDocument;
 @class PreferenceController;
 @class DebugController;
+@class SilenceOutputController;
 
 typedef struct {
 	UInt64 firstLoadedFrame;
@@ -82,6 +83,7 @@ typedef struct {
 	IBOutlet NSTextField *displayOverload;
 
 	PlaylistDocument *mPlaylistDoc;
+	SilenceOutputController *silenceOutputController;
 
 	NSURL *mFirstFileToPlay; //Used during playback start process
 
@@ -103,6 +105,7 @@ typedef struct {
 - (IBAction)togglePlaylistDrawer: (id)sender;
 - (IBAction)showPreferencePanel:(id)sender;
 - (IBAction)showDebugPanel:(id)sender;
+- (IBAction)showSilenceOutputPanel:(id)sender;
 - (IBAction)openDonationPage:(id)sender;
 
 - (IBAction)performLoadPlaylist:(id)sender;

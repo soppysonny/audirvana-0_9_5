@@ -586,6 +586,34 @@ OSStatus coreAudioOutputIOProc(AudioDeviceID  inDevice,
 
 	if (bufferData->isIOPaused) return kAudioHardwareNoError;
 
+	/* ── Silence output mode ── */
+	if (bufferData->isSilenceMode) {
+		if (bufferData->isDSDSilenceMode
+				&& bufferData->isIntegerModeOn
+				&& bufferData->isSimpleStereoDevice
+				&& (bufferData->integerModeStreamFormat.mBytesPerFrame /
+					bufferData->integerModeStreamFormat.mChannelsPerFrame) == 4) {
+			/* DSD silence via DoP: 32-bit container, 24-bit high-aligned.
+			   Each stereo frame: [L, R] both carry alternating DoP marker
+			   (0x05 / 0xFA) in the top byte + DSD silence bytes (0x69). */
+			UInt32 numFrames = outOutputData->mBuffers[0].mDataByteSize
+								/ bufferData->integerModeStreamFormat.mBytesPerFrame;
+			UInt32 *samples  = (UInt32*)outOutputData->mBuffers[0].mData;
+			for (UInt32 i = 0; i < numFrames; i++) {
+				UInt8  marker = ((bufferData->dsdSilenceDoPCounter++ % 2) == 0) ? 0x05 : 0xFA;
+				UInt32 sample = ((UInt32)marker << 24) | (0x69u << 16) | (0x69u << 8);
+				samples[2 * i]     = sample; /* Left  */
+				samples[2 * i + 1] = sample; /* Right */
+			}
+		} else {
+			/* PCM silence or DSD fallback: zero all output buffers. */
+			for (UInt32 i = 0; i < outOutputData->mNumberBuffers; i++)
+				bzero(outOutputData->mBuffers[i].mData,
+					  outOutputData->mBuffers[i].mDataByteSize);
+		}
+		return kAudioHardwareNoError;
+	}
+
 	playingBuffer = bufferData->playingAudioBuffer; //For thread safety, make a local copy in this thread
 
 	if ((playingBuffer > 1)
@@ -956,12 +984,17 @@ OSStatus HALlistenerProc(AudioObjectID inObjectID,
 	UInt32 isSleepingAllowed;
 
 	isPlaying = false;
+	isSilenceModeActive = NO;
+	silenceTargetSampleRate = 0.0;
 	mBufferData.appController = controller;
 	mBufferData.audioOut = self;
 	mBufferData.playingAudioBuffer = -1;
 	mBufferData.selectedAudioDeviceID = 0;
 	mBufferData.isSimpleStereoDevice = NO;
 	mBufferData.isHoggingDevice = NO;
+	mBufferData.isSilenceMode = NO;
+	mBufferData.isDSDSilenceMode = NO;
+	mBufferData.dsdSilenceDoPCounter = 0;
 	mBufferData.playbackStartPhase = kAudioPlaybackNotInStartingPhase;
 	selectedAudioDeviceIndex = -1;
 
@@ -2233,7 +2266,10 @@ OSStatus HALlistenerProc(AudioObjectID inObjectID,
 	err = AudioDeviceCreateIOProcID(mBufferData.selectedAudioDeviceID, coreAudioOutputIOProc, &mBufferData, &audioOutIOProcID);
 
 	if (err == kAudioHardwareNoError) {
-		[mBufferData.appController startPlayingPhase2];
+		if (isSilenceModeActive)
+			[mBufferData.appController startSilencePlaybackPhase];
+		else
+			[mBufferData.appController startPlayingPhase2];
 		return true;
 	}
 	else return false;
@@ -2295,7 +2331,15 @@ OSStatus HALlistenerProc(AudioObjectID inObjectID,
 			*outError = [NSError errorWithDomain:NSOSStatusErrorDomain code:err userInfo:errDict];
 		}
 
-    if (mBufferData.buffers[mBufferData.playingAudioBuffer].inputFileLoader
+    if (isSilenceModeActive) {
+        /* For silence output, switch to the user-requested rate. */
+        mBufferData.isIOPaused |= kAudioIOProcSampleRateChanging;
+        if (silenceTargetSampleRate != audioDeviceCurrentNominalSampleRate)
+            [self setSamplingRate:silenceTargetSampleRate];
+        else
+            [self samplerateSwitchIsComplete];
+    }
+    else if (mBufferData.buffers[mBufferData.playingAudioBuffer].inputFileLoader
         && (mBufferData.buffers[mBufferData.playingAudioBuffer].sampleRate != audioDeviceCurrentNominalSampleRate)) {
         mBufferData.isIOPaused |= kAudioIOProcSampleRateChanging;
 		[self setSamplingRate:mBufferData.buffers[0].sampleRate];
@@ -2312,12 +2356,60 @@ OSStatus HALlistenerProc(AudioObjectID inObjectID,
 	return (err == noErr);
 }
 
+- (bool)startSilenceOutput:(Float64)pcmSampleRate isDSDMode:(BOOL)isDSD
+{
+	NSError *err = nil;
+
+	if (isPlaying) [self stop];
+
+	/* Configure silence mode */
+	isSilenceModeActive = YES;
+	silenceTargetSampleRate = pcmSampleRate;
+	mBufferData.isSilenceMode = YES;
+	mBufferData.isDSDSilenceMode = isDSD;
+	mBufferData.dsdSilenceDoPCounter = 0;
+
+	/* Provide a valid (empty) playing buffer so startPlayback: accesses real memory */
+	mBufferData.playingAudioBuffer = 0;
+	for (int i = 0; i < 2; i++) {
+		mBufferData.buffers[i].inputFileLoader = nil;
+		mBufferData.buffers[i].loadedFrames    = 0;
+		mBufferData.buffers[i].lengthFrames    = 0;
+		mBufferData.buffers[i].data            = NULL;
+		mBufferData.buffers[i].dataSizeInBytes = 0;
+	}
+
+	/* Pre-set device sample rate so initiatePlaybackAfterHoggingDevice
+	   finds the right integer mode format for that rate. */
+	[self setSamplingRate:pcmSampleRate];
+
+	return [self initiatePlayback:&err];
+}
+
+- (void)resetSilenceMode
+{
+	isSilenceModeActive = NO;
+	mBufferData.isSilenceMode = NO;
+	mBufferData.isDSDSilenceMode = NO;
+	mBufferData.dsdSilenceDoPCounter = 0;
+}
+
+- (bool)isSilenceModeActive
+{
+	return isSilenceModeActive;
+}
+
 - (bool)stop
 {
 	Float64 deviceMaxSplRate;
 	OSStatus err;
 	AudioObjectPropertyAddress propertyAddress;
 	UInt32 propertySize;
+
+	/* Reset silence mode on any stop */
+	isSilenceModeActive = NO;
+	mBufferData.isSilenceMode = NO;
+	mBufferData.isDSDSilenceMode = NO;
 
 	//Ensure playback is running, and file is open
 	if (!isPlaying) return false;

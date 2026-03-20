@@ -131,11 +131,14 @@ struct _AudioOutputBufferData {
 
 	UInt32 isIOPaused;
 	UInt32 playbackStartPhase;
+	UInt32 dsdSilenceDoPCounter;
 
 	bool isIntegerModeOn;
 	bool isHoggingDevice;
 	bool willChangePlayingBuffer;
 	bool isSimpleStereoDevice;
+	bool isSilenceMode;
+	bool isDSDSilenceMode;
 };
 
 typedef struct _AudioOutputBufferData AudioOutputBufferData;
@@ -147,12 +150,14 @@ typedef struct _AudioOutputBufferData AudioOutputBufferData;
 	NSMutableArray *audioDevicesList;
 
 	Float64 audioDeviceCurrentNominalSampleRate;
+	Float64 silenceTargetSampleRate;
 	UInt32 audioDeviceCurrentPhysicalBitDepth;
 	UInt32 audioDeviceInitialIOBufferFrameSize;
 
 	SInt32 selectedAudioDeviceIndex;
 
 	bool isPlaying;
+	bool isSilenceModeActive;
 }
 @property (readonly) NSMutableArray *audioDevicesList;
 @property (readonly) SInt32 selectedAudioDeviceIndex;
@@ -220,6 +225,14 @@ typedef struct _AudioOutputBufferData AudioOutputBufferData;
 - (bool)seek:(UInt64)seekPosition;
 - (UInt64)currentPlayingPosition;
 - (bool)stop;
+
+/* Silence output — outputs digital silence at the specified PCM sample rate.
+   For DSD modes, set isDSD=YES and pass the DoP-equivalent PCM rate:
+     DSD64  → 176400 Hz   DSD128 → 352800 Hz
+     DSD256 → 705600 Hz   DSD512 → 1411200 Hz */
+- (bool)startSilenceOutput:(Float64)pcmSampleRate isDSDMode:(BOOL)isDSD;
+- (void)resetSilenceMode;
+- (bool)isSilenceModeActive;
 
 - (UInt32)deviceInitializationStatus;
 
