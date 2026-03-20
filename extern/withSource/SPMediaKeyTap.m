@@ -1,6 +1,7 @@
 // Copyright (c) 2010 Spotify AB
 #import "SPMediaKeyTap.h"
 #import "NSObject+SPInvocationGrabbing.h" // https://gist.github.com/511181, in submodule
+#import <ApplicationServices/ApplicationServices.h>
 
 @interface SPMediaKeyTap ()
 -(BOOL)shouldInterceptMediaKeyEvents;
@@ -74,8 +75,10 @@ static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
                                       self);
         if (_eventPort == NULL) {
             // CGEventTapCreate fails if the app lacks Input Monitoring / Accessibility permission.
-            // Silently degrade: media key interception is unavailable.
-            NSLog(@"SPMediaKeyTap: CGEventTapCreate failed — media key tap not available (check Input Monitoring permission)");
+            // Prompt the user to grant Accessibility access, then open the relevant pane.
+            NSLog(@"SPMediaKeyTap: CGEventTapCreate failed — requesting accessibility permission");
+            NSDictionary *options = @{(__bridge NSString *)kAXTrustedCheckOptionPrompt: @YES};
+            AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)options);
             return;
         }
 
