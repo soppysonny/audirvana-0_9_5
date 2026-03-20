@@ -72,10 +72,19 @@ static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
                                       CGEventMaskBit(NX_SYSDEFINED),
                                       tapEventCallback,
                                       self);
-        assert(_eventPort != NULL);
+        if (_eventPort == NULL) {
+            // CGEventTapCreate fails if the app lacks Input Monitoring / Accessibility permission.
+            // Silently degrade: media key interception is unavailable.
+            NSLog(@"SPMediaKeyTap: CGEventTapCreate failed — media key tap not available (check Input Monitoring permission)");
+            return;
+        }
 
         _eventPortSource = CFMachPortCreateRunLoopSource(kCFAllocatorSystemDefault, _eventPort, 0);
-        assert(_eventPortSource != NULL);
+        if (_eventPortSource == NULL) {
+            CFRelease(_eventPort); _eventPort = NULL;
+            NSLog(@"SPMediaKeyTap: CFMachPortCreateRunLoopSource failed");
+            return;
+        }
 
         // Let's do this in a separate thread so that a slow app doesn't lag the event tap
         [NSThread detachNewThreadSelector:@selector(eventTapThread) toTarget:self withObject:nil];
