@@ -5,7 +5,20 @@
       "Bash(grep -E \"^.*\\(error:|warning: deprecated|note:\\).*$\")",
       "Bash(brew install:*)",
       "Bash(head -10 grep -n \"itemListMap\\\\|ItemListMap\\\\|items\\(\\)\" /Users/lava/Desktop/audirvana/extern/include/taglib/mp4tag.h)",
-      "Bash(brew search:*)"
+      "Bash(brew search:*)",
+      "Bash(grep -v \"^--$\")",
+      "Bash(find /Users/lava/Desktop/audirvana -maxdepth 1 -name *.xcodeproj -o -name *.pbxproj)",
+      "Bash(xcodebuild -project Audirvana.xcodeproj -scheme Audirvana -configuration Debug build)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(xcodebuild -scheme DacTester -destination 'generic/platform=iOS' build)",
+      "Bash(xcodebuild -scheme DacTester -destination 'generic/platform=iOS' -skipPackagePluginValidation build)",
+      "Bash(xcodebuild -scheme DacTester -destination 'generic/platform=iOS' -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO build)",
+      "Bash(ls:*)",
+      "Bash(xcodebuild -project DacTester.xcodeproj -scheme DacTester -destination 'generic/platform=iOS' build)",
+      "Bash(xcodebuild -project DacTester.xcodeproj -scheme DacTester -destination 'generic/platform=iOS' -disableAutomaticPackageResolution build)",
+      "Bash(xcodebuild -workspace DacTester.xcworkspace -scheme DacTester -destination 'generic/platform=iOS' build)",
+      "Bash(xcodebuild -workspace DacTester.xcworkspace -scheme DacTester -resolvePackageDependencies)"
     ]
   }
 }
